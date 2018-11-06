@@ -13,10 +13,6 @@ module SpreeFlexiVariants
       Dir.glob(File.join(File.dirname(__FILE__), "../../app/**/*_decorator*.rb")) do |c|
         Rails.configuration.cache_classes ? require(c) : load(c)
       end
-
-      Spree::Core::Environment::Calculators.class_eval do
-        attr_accessor :product_customization_types
-      end
     end
 
     config.to_prepare &method(:activate).to_proc
@@ -30,7 +26,13 @@ module SpreeFlexiVariants
     end
 
     initializer "spree.flexi_variants.register.calculators" do |app|
-      app.config.spree.calculators.add_class('product_customization_types') unless app.config.spree.calculators.respond_to?(:product_customization_types)
+      unless app.config.spree.calculators.respond_to?(:product_customization_types)
+        Spree::Core::Engine::SpreeCalculators.class_eval do
+          attr_accessor :product_customization_types
+        end
+      end
+
+      app.config.spree.calculators.product_customization_types ||= []
       app.config.spree.calculators.product_customization_types += [
                                                                     Spree::Calculator::Engraving,
                                                                     Spree::Calculator::AmountTimesConstant,
